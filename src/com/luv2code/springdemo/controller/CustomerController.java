@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.luv2code.springdemo.entity.Customer;
 import com.luv2code.springdemo.service.CustomerService;
+import com.luv2code.springdemo.util.SortUtils;
 
 @Controller
 @RequestMapping("/customer")
@@ -23,18 +24,28 @@ public class CustomerController {
 	private CustomerService customerService;
 
 	@GetMapping("/list")
-	public String listCustomers(Model theModel) {
-
-		//get customers from DAO
-		List<Customer> theCustomer= customerService.getCustomers();
+	public String listCustomers(Model theModel, @RequestParam(required=false) String sort) {
 		
-		// Add the customers to the model
+		// get customers from the service
+		List<Customer> theCustomers = null;
 		
-		theModel.addAttribute("customers",theCustomer);
+		// check for sort field
+		if (sort != null) {
+			int theSortField = Integer.parseInt(sort);
+			theCustomers = customerService.getCustomers(theSortField);			
+		}
+		else {
+			// no sort field provided ... default to sorting by last name
+			theCustomers = customerService.getCustomers(SortUtils.LAST_NAME);
+		}
+		
+		// add the customers to the model
+		theModel.addAttribute("customers", theCustomers);
 		
 		return "list-customers";
-
 	}
+	
+	
 	
 	@GetMapping("/showFormForAdd")
 	public String showFormForAdd(Model theModel){
@@ -71,8 +82,20 @@ public class CustomerController {
 		
 		customerService.deleteCustomer(theId);
 				
-		return "redirect:/customer/list";
-		
-		
+		return "redirect:/customer/list";	
 	}
+	
+	
+	@GetMapping("/search")
+    public String searchCustomers(@RequestParam("theSearchName") String theSearchName,
+                                    Model theModel) {
+        // search customers from the service
+        List<Customer> theCustomers = customerService.searchCustomers(theSearchName);
+                
+        // add the customers to the model
+        theModel.addAttribute("customers", theCustomers);
+        return "list-customers";        
+    }
+	
+		
 }
